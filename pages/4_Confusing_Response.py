@@ -11,7 +11,7 @@ user_input = st.text_input("You: ", "")
 def generate_response_confusing(system_prompt, user_message, context=None):
     generation_settings = st.session_state['generation_settings']  # Retrieve settings
 
-    formatted_prompt = context + format_prompt(system_prompt, user_message) if context else format_prompt(system_prompt, user_message)
+    formatted_prompt = (context + format_prompt(system_prompt, user_message)) if context else format_prompt(system_prompt, user_message)
     inputs = tokenizer.encode(formatted_prompt, return_tensors="pt").to(device)
 
     response = []
@@ -31,7 +31,8 @@ def generate_response_confusing(system_prompt, user_message, context=None):
         if least_likely_token == tokenizer.eos_token_id:
             break
 
-    response_text = tokenizer.decode(response, skip_special_tokens=True)
+    # Decode only the generated tokens after the initial input
+    response_text = tokenizer.decode(response, skip_special_tokens=True).strip()
     return response_text
 
 if st.button("Send"):
@@ -40,7 +41,9 @@ if st.button("Send"):
         if st.session_state.context_enabled:
             conversation_history = format_prompt(system_prompt, user_input)
 
+        # Generate and display response
         response_confusing = generate_response_confusing(system_prompt, user_input, conversation_history)
         st.text_area("Confusing LLM Response:", value=response_confusing, height=200)
 
+        # Log the conversation
         log_conversation({"user_input": user_input, "response_type": "Confusing LLM", "response": response_confusing})
